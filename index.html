@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schatzis Dschungel</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#2e6a45">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: schmale App-Spalte, Tabs oben, Karten für Pflanzen & Angebote; "Heute" zuerst. */
+:root{
+  --bg:#eef2ec; --surface:#ffffff; --surface-2:#f6f8f4; --ink:#14271c; --muted:#5a6a5f; --line:#d6ddd3;
+  --accent:#2e6a45; --accent-ink:#ffffff; --accent-soft:#dcebe0; --rose:#b8506f; --rose-soft:#f6e2e9;
+  --ok:#2f7d4f; --warn:#a86b12; --warn-soft:#fbefd9; --crit:#b23a3a; --crit-soft:#f8e0e0;
+  --display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body:"Figtree", "Segoe UI", system-ui, sans-serif;
+  --r:14px; --shadow:0 1px 2px rgba(20,39,28,.06), 0 4px 16px rgba(20,39,28,.05);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1611; --surface:#152019; --surface-2:#1a271f; --ink:#e4eee7; --muted:#9badA1; --line:#273a2e;
+    --accent:#74c793; --accent-ink:#0e1611; --accent-soft:#1f3b2a; --rose:#e78fab; --rose-soft:#3a2229;
+    --ok:#74c793; --warn:#e3a94a; --warn-soft:#3a2d16; --crit:#ef8080; --crit-soft:#3d1f1f;
+    --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1611; --surface:#152019; --surface-2:#1a271f; --ink:#e4eee7; --muted:#9badA1; --line:#273a2e;
+  --accent:#74c793; --accent-ink:#0e1611; --accent-soft:#1f3b2a; --rose:#e78fab; --rose-soft:#3a2229;
+  --ok:#74c793; --warn:#e3a94a; --warn-soft:#3a2d16; --crit:#ef8080; --crit-soft:#3d1f1f;
+  --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:980px;margin:0 auto;padding:20px 16px 64px}
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(1.7rem,4vw,2.3rem);font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.35rem;font-weight:700}
+h3{font-size:1.08rem;font-weight:700}
+p{margin:0}
+a{color:var(--accent)}
+.muted{color:var(--muted)}
+.small{font-size:.875rem}
+.num{font-variant-numeric:tabular-nums}
+
+header.top{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+header.top svg{flex:none}
+.sub{color:var(--muted);margin-bottom:16px}
+.status-line{font-size:.8rem;color:var(--muted);min-height:1.2em}
+
+nav.tabs{display:flex;gap:6px;overflow-x:auto;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;margin:14px 0 20px;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs a{flex:none;text-decoration:none;color:var(--muted);font-weight:600;font-size:.95rem;padding:8px 14px;border-radius:999px;white-space:nowrap}
+nav.tabs a[aria-current="page"]{background:var(--accent);color:var(--accent-ink)}
+nav.tabs a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--rose);outline-offset:2px}
+
+.banner{display:flex;gap:12px;align-items:flex-start;background:var(--accent-soft);border-radius:var(--r);padding:14px 16px;margin-bottom:18px}
+.banner b{font-family:var(--display)}
+.banner ul{margin:6px 0 0;padding-left:18px}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.tile .v{font-family:var(--display);font-size:1.9rem;font-weight:700;line-height:1.1}
+.tile .l{color:var(--muted);font-size:.85rem}
+.tile.crit .v{color:var(--crit)} .tile.warn .v{color:var(--warn)} .tile.rose .v{color:var(--rose)}
+
+.section{margin-top:26px}
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+
+.list{display:flex;flex-direction:column;gap:8px}
+.task{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--line);border-radius:12px;padding:10px 12px}
+.task.crit{border-left-color:var(--crit)} .task.warn{border-left-color:var(--warn)} .task.ok{border-left-color:var(--ok)} .task.info{border-left-color:var(--accent)}
+.task .ic{font-size:1.3rem;width:28px;text-align:center;flex:none}
+.task .t{flex:1;min-width:0}
+.task .t b{display:block}
+.task .t span{color:var(--muted);font-size:.875rem}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+.card .body{padding:14px;display:flex;flex-direction:column;gap:10px;flex:1}
+.photo{aspect-ratio:4/3;background:var(--surface-2);display:grid;place-items:center;overflow:hidden}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.photo svg{opacity:.5}
+.meta-row{display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:.78rem;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line);white-space:nowrap}
+.chip.crit{background:var(--crit-soft);color:var(--crit);border-color:transparent}
+.chip.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.chip.ok{background:var(--accent-soft);color:var(--ok);border-color:transparent}
+.chip.rose{background:var(--rose-soft);color:var(--rose);border-color:transparent}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.stat{background:var(--surface-2);border-radius:10px;padding:8px}
+.stat .k{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.stat .v{font-weight:700;font-size:.92rem}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+
+button,.btn{font:600 .9rem var(--body);border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 12px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;min-height:38px}
+button:hover,.btn:hover{border-color:var(--accent)}
+button.primary,.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+button.danger{color:var(--crit)}
+button:disabled{opacity:.5;cursor:default}
+button.sm{min-height:32px;padding:5px 10px;font-size:.84rem}
+
+.empty{background:var(--surface);border:1.5px dashed var(--line);border-radius:var(--r);padding:22px;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center}
+.quick{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+
+/* Sorten */
+.sorten{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.sorte .body{gap:8px}
+.diff{display:inline-flex;gap:3px;vertical-align:middle}
+.diff i{width:9px;height:9px;border-radius:50%;background:var(--line);display:block}
+.diff i.on{background:var(--rose)}
+dl.care{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin:0;font-size:.9rem}
+dl.care dt{color:var(--muted);font-weight:600}
+dl.care dd{margin:0}
+.tip{font-size:.88rem;background:var(--surface-2);border-radius:10px;padding:8px 10px}
+.filterbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.filterbar input{flex:1;min-width:200px}
+
+/* Doktor */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:760px){.two{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px}
+details.sym{border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+details.sym summary{cursor:pointer;padding:11px 14px;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:8px}
+details.sym summary::-webkit-details-marker{display:none}
+details.sym summary::after{content:"+";color:var(--muted);font-weight:700}
+details.sym[open] summary::after{content:"–"}
+details.sym .in{padding:0 14px 14px;font-size:.93rem;display:flex;flex-direction:column;gap:6px}
+.answer{background:var(--surface-2);border-radius:12px;padding:14px;white-space:pre-wrap;font-size:.95rem;min-height:3em}
+.answer:empty{display:none}
+
+/* Formulare */
+label{font-weight:600;font-size:.88rem;display:flex;flex-direction:column;gap:4px}
+input,select,textarea{font:inherit;font-weight:400;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:40px;width:100%}
+textarea{min-height:90px;resize:vertical}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid .full{grid-column:1/-1}
+@media (max-width:520px){.form-grid{grid-template-columns:1fr}}
+.hint{font-weight:400;color:var(--muted);font-size:.8rem}
+
+/* Angebote */
+.offer{border-left:5px solid var(--line)}
+.offer.hit{border-left-color:var(--rose)}
+.offer.expired{opacity:.55}
+.price{font-family:var(--display);font-size:1.6rem;font-weight:700}
+.price s{font-family:var(--body);font-size:.95rem;color:var(--muted);font-weight:400;margin-left:6px}
+table.ref{width:100%;border-collapse:collapse;font-size:.92rem}
+table.ref th,table.ref td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+table.ref th{color:var(--muted);font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.04em}
+.tablebox{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.wish{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+.wish .t{flex:1}
+
+/* Overlay */
+.overlay{position:fixed;inset:0;background:rgba(10,20,14,.45);display:none;align-items:flex-start;justify-content:center;padding:24px 12px;overflow-y:auto;z-index:20}
+.overlay.open{display:flex}
+.sheet{background:var(--surface);border-radius:18px;max-width:620px;width:100%;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.log{max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;font-size:.88rem}
+.log div{display:flex;gap:10px;padding:4px 0;border-bottom:1px solid var(--line)}
+.log span:first-child{color:var(--muted);width:78px;flex:none}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30;max-width:90vw}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion: reduce){.toast{transition:none}}
+.hidden{display:none !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <svg width="46" height="46" viewBox="0 0 64 64" aria-hidden="true">
+      <path d="M32 58 C32 46 31 38 30 30" stroke="var(--accent)" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M30 31 C12 30 6 16 14 8 C22 2 40 2 50 9 C60 17 54 31 30 31 Z" fill="var(--accent)"/>
+      <g fill="var(--bg)">
+        <path d="M14 14 l9 5 l-1 3 z"/><path d="M19 8 l9 9 l-2 2 z"/><path d="M29 5 l4 12 l-3 1 z"/>
+        <path d="M41 6 l-4 12 l3 1 z"/><path d="M51 12 l-9 8 l2 2 z"/><path d="M55 21 l-11 3 l1 3 z"/>
+        <ellipse cx="22" cy="24" rx="2.5" ry="1.6"/><ellipse cx="41" cy="25" rx="2.5" ry="1.6"/>
+      </g>
+    </svg>
+    <div>
+      <h1>Schatzis Dschungel</h1>
+      <div class="status-line" id="status">Lade deine Pflanzen …</div>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="Bereiche">
+    <a href="#heute" data-view="heute">Heute</a>
+    <a href="#pflanzen" data-view="pflanzen">Meine Pflanzen</a>
+    <a href="#angebote" data-view="angebote">Angebote</a>
+    <a href="#doktor" data-view="doktor">Pflanzendoktor</a>
+    <a href="#sorten" data-view="sorten">Monstera-Lexikon</a>
+    <a href="#umtopfen" data-view="umtopfen">Umtopfen &amp; Erde</a>
+  </nav>
+
+  <main id="view"></main>
+  <p class="small muted" style="margin-top:40px">Deine Pflanzen werden nur in diesem Browser gespeichert. Ab und zu unter „Meine Pflanzen“ auf <b>Sichern</b> tippen, dann geht nichts verloren. Tipp: Über „Zum Home-Bildschirm hinzufügen“ wird die Seite wie eine App.</p>
+</div>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+  <div class="sheet" id="sheet"></div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ---------- Wissen: Monstera-Sorten ---------- */
+const SORTEN = {
+  deliciosa:{name:"Monstera deliciosa", alias:"Fensterblatt, der Klassiker", diff:1, waterDays:7, fertDays:14, repotYears:2,
+    light:"Hell bis halbschattig, keine pralle Mittagssonne", water:"Wenn die oberen 3–5 cm trocken sind", humid:"50–60 %",
+    growth:"Schnell, kletternd; braucht später einen Moosstab", price:"10–30 €",
+    tips:["Löcher (Fenestrierung) kommen mit Alter und Licht. Kleine Blätter ohne Löcher heißen meist: mehr Licht.","Luftwurzeln nicht abschneiden, sondern in den Moosstab oder in die Erde leiten."],
+    keys:["deliciosa","fensterblatt"]},
+  thai:{name:"Monstera deliciosa 'Thai Constellation'", alias:"Creme-gesprenkelt, stabile Panaschierung", diff:2, waterDays:9, fertDays:21, repotYears:2,
+    light:"Sehr hell, aber ohne direkte Sonne: die cremigen Flecken verbrennen schnell", water:"Etwas sparsamer als die grüne Form; obere 5 cm trocken", humid:"55–65 %",
+    growth:"Langsamer als die grüne Form", price:"15–40 € (klein), große Exemplare deutlich mehr",
+    tips:["Die Panaschierung stammt aus Gewebekultur und bleibt stabil, sie schlägt nicht zurück ins Grüne.","Inzwischen oft günstig in Baumärkten und bei Kaufland zu finden."],
+    keys:["thai","constellation"]},
+  albo:{name:"Monstera deliciosa 'Albo Variegata'", alias:"Weiß-grün, instabile Panaschierung", diff:3, waterDays:9, fertDays:21, repotYears:2,
+    light:"Sehr hell, keine direkte Sonne", water:"Gleichmäßig, nie nass stehen lassen", humid:"60–70 %",
+    growth:"Langsam; weiße Partien betreiben keine Photosynthese", price:"50–300 €, Stecklinge ab ca. 40 €",
+    tips:["Wird ein Trieb komplett grün oder komplett weiß, über dem letzten gut gemischten Blatt zurückschneiden.","Braune Ränder an rein weißen Stellen sind fast unvermeidbar und kein Pflegefehler."],
+    keys:["albo","variegata","variegated"]},
+  aurea:{name:"Monstera deliciosa 'Aurea' / 'Yellow Marilyn'", alias:"Gelb-grüne Panaschierung", diff:3, waterDays:9, fertDays:21, repotYears:2,
+    light:"Sehr hell, ohne direkte Sonne", water:"Wenn obere 5 cm trocken", humid:"60–70 %",
+    growth:"Langsam", price:"meist dreistellig",
+    tips:["Pflege wie Albo; gelbe Partien sind etwas robuster als weiße."], keys:["aurea","marilyn","yellow"]},
+  borsigiana:{name:"Monstera deliciosa 'Borsigiana'", alias:"Schlankere, schnellere Form", diff:1, waterDays:7, fertDays:14, repotYears:2,
+    light:"Hell bis halbschattig", water:"Wenn obere 3–5 cm trocken", humid:"50–60 %",
+    growth:"Schnell, mit längeren Abständen zwischen den Blättern", price:"10–25 €",
+    tips:["Im Handel wird oft nicht zwischen Borsigiana und deliciosa unterschieden; Pflege ist identisch."], keys:["borsigiana"]},
+  adansonii:{name:"Monstera adansonii", alias:"„Monkey Mask“, viele kleine Löcher", diff:1, waterDays:6, fertDays:14, repotYears:1,
+    light:"Hell, ohne direkte Sonne", water:"Gleichmäßig leicht feucht halten, oberste 2–3 cm antrocknen lassen", humid:"60 %+",
+    growth:"Schnell; rankend oder hängend als Ampel", price:"8–20 €",
+    tips:["Lässt sich super als Steckling vermehren: ein Stück mit Knoten ins Wasserglas.","Hängend bleiben die Blätter kleiner, kletternd werden sie größer."], keys:["adansonii","monkey"]},
+  obliqua:{name:"Monstera obliqua 'Peru'", alias:"Papierdünne Blätter, fast mehr Loch als Blatt", diff:3, waterDays:4, fertDays:21, repotYears:2,
+    light:"Hell und indirekt", water:"Nie ganz austrocknen lassen", humid:"75–90 % (Vitrine/Gewächshaus)",
+    growth:"Sehr langsam, bildet Ausläufer", price:"6–20 € als Jungpflanze aus Gewebekultur",
+    tips:["Nicht zu verwechseln mit Monstera 'Peru' (karstenianum), die ist dickledrig und robust.","Unter ca. 70 % Luftfeuchte vertrocknen die dünnen Blätter schnell; am besten in einer Pflanzenvitrine."], keys:["obliqua"]},
+  peru:{name:"Monstera 'Peru' (M. karstenianum)", alias:"Dicke, gesteppte Blätter ohne Löcher", diff:1, waterDays:8, fertDays:14, repotYears:2,
+    light:"Hell bis halbschattig", water:"Gut antrocknen lassen; verzeiht Vergesslichkeit", humid:"50 %+",
+    growth:"Mittel, kletternd oder hängend", price:"8–20 €",
+    tips:["Eine der robustesten Monstera; gute Wahl für die Fensterbank.","Wird im Handel manchmal als „Monstera sp. Peru“ verkauft."], keys:["karstenianum","'peru'","monstera peru"]},
+  standleyana:{name:"Monstera standleyana", alias:"Längliche Blätter, oft weiß gesprenkelt", diff:2, waterDays:7, fertDays:14, repotYears:2,
+    light:"Hell, ohne direkte Sonne (panaschierte Formen heller)", water:"Wenn obere 3 cm trocken", humid:"50–60 %",
+    growth:"Mittel, kletternd", price:"10–40 €",
+    tips:["Wird manchmal fälschlich als „Philodendron Cobra“ verkauft.","Bekommt keine Löcher; das ist normal."], keys:["standleyana","cobra"]},
+  siltepecana:{name:"Monstera siltepecana", alias:"Silbrig schimmernde Jugendblätter", diff:2, waterDays:6, fertDays:14, repotYears:2,
+    light:"Hell bis halbschattig", water:"Leicht feucht halten", humid:"60 %+",
+    growth:"Mittel; kletternd oder hängend", price:"10–25 €",
+    tips:["Klettert sie, werden die Blätter größer und bekommen später Löcher."], keys:["siltepecana"]},
+  dubia:{name:"Monstera dubia", alias:"Liegt jung wie Dachziegel flach an der Kletterhilfe", diff:2, waterDays:6, fertDays:21, repotYears:2,
+    light:"Hell, indirekt", water:"Leicht feucht halten", humid:"60–70 %",
+    growth:"Langsam; braucht ein Brett oder Rindenstück zum Anschmiegen", price:"15–40 €",
+    tips:["Ohne flache Kletterhilfe zeigt sie das typische Anschmiegen nicht."], keys:["dubia"]},
+  pinnatipartita:{name:"Monstera pinnatipartita", alias:"Erwachsene Blätter tief eingeschnitten", diff:2, waterDays:7, fertDays:14, repotYears:2,
+    light:"Hell, indirekt", water:"Wenn obere 3–5 cm trocken", humid:"60 %+",
+    growth:"Mittel; Einschnitte erst mit Moosstab und Größe", price:"20–60 €",
+    tips:["Jungpflanzen haben noch ganze Blätter; Geduld."], keys:["pinnatipartita"]},
+  esqueleto:{name:"Monstera epipremnoides 'Esqueleto'", alias:"Riesige Löcher, „Skelett“-Look", diff:3, waterDays:6, fertDays:21, repotYears:2,
+    light:"Hell, indirekt", water:"Gleichmäßig feucht, nie nass", humid:"70 %+",
+    growth:"Mittel; braucht viel Platz", price:"meist 80 € aufwärts",
+    tips:["Empfindlich bei trockener Heizungsluft; Luftbefeuchter hilft."], keys:["esqueleto","epipremnoides"]},
+  acuminata:{name:"Monstera acuminata", alias:"Ähnlich adansonii, jung anschmiegend", diff:1, waterDays:6, fertDays:14, repotYears:2,
+    light:"Hell bis halbschattig", water:"Leicht feucht halten", humid:"55 %+",
+    growth:"Mittel, kletternd", price:"10–25 €",
+    tips:["Wird oft mit adansonii verwechselt; Pflege ist fast gleich."], keys:["acuminata"]},
+  andere:{name:"Andere Pflanze", alias:"", diff:1, waterDays:7, fertDays:14, repotYears:2,
+    light:"–", water:"–", humid:"–", growth:"–", price:"–", tips:[], keys:[]}
+};
+const SORT_ORDER = ["deliciosa","thai","albo","aurea","borsigiana","adansonii","peru","obliqua","standleyana","siltepecana","dubia","pinnatipartita","acuminata","esqueleto"];
+
+const SYMPTOME = [
+  {t:"Gelbe Blätter, Erde ist feucht", c:"Meist zu viel Wasser oder Staunässe; die Wurzeln bekommen keine Luft.", d:["Gießen pausieren, bis die oberen 5 cm trocken sind.","Prüfen, ob Wasser im Übertopf steht, und es abgießen.","Riecht die Erde muffig: austopfen, matschige braune Wurzeln abschneiden, in luftige Aroid-Mischung setzen."]},
+  {t:"Einzelnes unteres Blatt wird gelb", c:"Oft normal: alte Blätter werden abgeworfen, wenn neue kommen.", d:["Abwarten und das Blatt abschneiden, sobald es ganz gelb ist."]},
+  {t:"Braune, knusprige Blattränder", c:"Trockene Heizungsluft oder unregelmäßiges Gießen. Im Winter der häufigste Grund.", d:["Nicht direkt über oder neben die Heizung stellen.","Luftfeuchte erhöhen: Luftbefeuchter, Pflanzen gruppieren, Schale mit Wasser und Kies.","Gleichmäßiger gießen; Fingerprobe statt fester Tage."]},
+  {t:"Schwarze oder dunkle, feuchte Flecken", c:"Häufig Staunässe mit Pilz- oder Bakterienbefall, seltener Kälteschaden (Fenster unter 12 °C).", d:["Befallene Blätter mit sauberer Schere entfernen.","Erde abtrocknen lassen, nicht von oben aufs Blatt sprühen.","Abstand zur kalten Scheibe prüfen."]},
+  {t:"Neue Blätter klein und ohne Löcher", c:"Zu wenig Licht oder die Pflanze ist noch jung bzw. hat keine Kletterhilfe.", d:["Näher ans Fenster (Ost/West ideal).","Moosstab anbieten; kletternde Monstera bilden größere Blätter.","Im Winter normal; im Frühjahr wird es besser."]},
+  {t:"Lange, dünne Triebe mit großen Abständen", c:"Vergeilen: die Pflanze streckt sich zum Licht.", d:["Hellerer Platz oder Pflanzenlampe.","Lange Triebe kann man als Stecklinge abnehmen."]},
+  {t:"Wassertropfen an den Blattspitzen", c:"Guttation: die Pflanze drückt überschüssiges Wasser raus. Harmlos.", d:["Etwas weniger gießen."]},
+  {t:"Blätter hängen schlaff", c:"Entweder Durst oder (paradox) faule Wurzeln, die kein Wasser mehr aufnehmen.", d:["Fingerprobe: trocken = gründlich gießen. Nass = Wurzeln prüfen."]},
+  {t:"Silbrige Sprenkel, kleine schwarze Punkte unter dem Blatt", c:"Thripse.", d:["Pflanze gründlich abduschen, auch Blattunterseiten.","Blau- oder Gelbtafeln aufhängen.","Raubmilben (Amblyseius) oder Neemöl-Spray; mehrere Wochen dranbleiben.","Befallene Pflanze von den anderen trennen."]},
+  {t:"Feine Gespinste, helle Pünktchen", c:"Spinnmilben, lieben trockene Heizungsluft.", d:["Abduschen, Luftfeuchte erhöhen.","Raubmilben (Phytoseiulus) einsetzen."]},
+  {t:"Kleine schwarze Fliegen über der Erde", c:"Trauermücken; die Larven leben in dauerhaft feuchter Erde.", d:["Erde stärker abtrocknen lassen.","Gelbtafeln in die Erde stecken.","Nematoden (SF-Nematoden) ins Gießwasser, oder eine Schicht Sand obendrauf."]},
+  {t:"Weiße, watteartige Flecken", c:"Woll- oder Schmierläuse.", d:["Mit in Alkohol getränktem Wattestäbchen abtupfen.","Mit Paraffinöl-Spray behandeln, nach 7 Tagen wiederholen."]}
+];
+
+/* ---------- Helfer ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+const pad = n => String(n).padStart(2,"0");
+const iso = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const todayIso = () => iso(new Date());
+const parse = s => { if(!s) return null; const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const addDays = (s,n) => { const d = parse(s); d.setDate(d.getDate()+n); return iso(d); };
+const diffDays = (a,b) => Math.round((parse(a) - parse(b)) / 86400000);
+const fmtDate = s => s ? parse(s).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"}) : "–";
+const fmtShort = s => s ? parse(s).toLocaleDateString("de-DE",{day:"numeric",month:"short"}) : "–";
+const euro = n => (n==null || n==="" || isNaN(n)) ? "" : Number(n).toFixed(2).replace(".",",") + " €";
+const month = () => new Date().getMonth()+1;
+function seasonFactor(m=month()){ return (m>=11 || m<=2) ? 1.5 : (m===3 || m===10) ? 1.2 : 1; }
+function seasonName(m=month()){ return (m>=11 || m<=2) ? "Winter" : (m>=3 && m<=5) ? "Frühling" : (m>=6 && m<=8) ? "Sommer" : "Herbst"; }
+const fertSeason = (m=month()) => m>=3 && m<=9;
+function relDays(n){
+  if(n===0) return "heute";
+  if(n===1) return "morgen";
+  if(n===-1) return "seit gestern";
+  if(n<0) return "seit "+(-n)+" Tagen";
+  return "in "+n+" Tagen";
+}
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"),2600); }
+function sorte(key){ return SORTEN[key] || SORTEN.andere; }
+
+/* ---------- Zustand & Speicher ---------- */
+const S = { plants:[], wishlist:[], offers:[], meta:{}, ready:{plants:false, wishlist:false, offers:false}, mode:"loading", readOnly:false };
+let db = null, sampleApi = null, downloads = null;
+const local = { plants:{}, wishlist:{}, offers:{} };
+const busy = new Set();
+
+function setStatus(t){ $("#status").textContent = t; }
+
+async function put(col, id, data){
+  if(S.readOnly){ toast("Du hast hier nur Leserechte."); return false; }
+  const key = col+"/"+id;
+  if(busy.has(key)) return false;
+  busy.add(key);
+  try{
+    if(db){ await db.collection(col).doc(id).set(data); }
+    else { local[col][id] = data; syncLocal(col); }
+    return true;
+  }catch(e){
+    if(e && e.code==="invalid_argument"){ S.readOnly = true; toast("Speichern nicht erlaubt: Du hast hier nur Leserechte."); }
+    else if(e && e.code==="quota_exceeded"){ toast("Speicher voll: bitte alte Einträge löschen."); }
+    else toast("Speichern hat nicht geklappt. Bitte gleich nochmal versuchen.");
+    return false;
+  }finally{ busy.delete(key); }
+}
+async function del(col, id){
+  try{
+    if(db) await db.collection(col).doc(id).delete();
+    else { delete local[col][id]; syncLocal(col); }
+    return true;
+  }catch(e){ toast("Löschen hat nicht geklappt."); return false; }
+}
+const LS_KEY = "schatzis-dschungel-v1";
+function persist(){ try{ localStorage.setItem(LS_KEY, JSON.stringify({...local, hidden: S.hidden||[], savedAt: new Date().toISOString()})); }catch(e){ toast("Speichern im Browser nicht möglich (Speicher voll oder privater Modus)."); } }
+function loadPersisted(){ try{ const d = JSON.parse(localStorage.getItem(LS_KEY)||"null"); if(d){ for(const c of ["plants","wishlist","offers"]) local[c] = d[c]||{}; S.hidden = d.hidden||[]; } }catch(e){} for(const c of ["plants","wishlist","offers"]) S[c] = Object.entries(local[c]).map(([id,x])=>({id,...x})); }
+function syncLocal(col){ S[col] = Object.entries(local[col]).map(([id,d])=>({id,...d})); persist(); render(); }
+async function loadRemoteOffers(){
+  try{
+    const r = await fetch("offers.json?t="+Date.now(), {cache:"no-store"}); if(!r.ok) return;
+    const j = await r.json(); S.meta = {updatedAt: j.updatedAt};
+    let changed = false;
+    for(const o of (j.offers||[])){ if(!o.id || (S.hidden||[]).includes(o.id)) continue; const {id, ...rest} = o; if(JSON.stringify(local.offers[id])!==JSON.stringify(rest)){ local.offers[id] = rest; changed = true; } }
+    if(changed) syncLocal("offers"); else render();
+  }catch(e){}
+}
+function exportBackup(){
+  const blob = new Blob([JSON.stringify({app:"schatzis-dschungel", version:1, exportedAt:new Date().toISOString(), plants:local.plants, wishlist:local.wishlist, offers:local.offers, hidden:S.hidden||[]}, null, 1)], {type:"application/json"});
+  saveBlob(blob, "dschungel-backup-"+todayIso()+".json");
+}
+function saveBlob(blob, name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},1000); }
+async function importBackup(file){
+  try{
+    const d = JSON.parse(await file.text());
+    if(d.app!=="schatzis-dschungel") throw new Error("x");
+    for(const c of ["plants","wishlist","offers"]) local[c] = d[c]||{};
+    S.hidden = d.hidden||[];
+    for(const c of ["plants","wishlist","offers"]) S[c] = Object.entries(local[c]).map(([id,x])=>({id,...x}));
+    persist(); render(); toast("Sicherung geladen: "+S.plants.length+" Pflanzen");
+  }catch(e){ toast("Das ist keine gültige Dschungel-Sicherung."); }
+}
+
+function subscribe(){
+  const timer = setTimeout(()=>{ if(!S.ready.plants) setStatus("Daten noch nicht erreichbar. Prüfe deine Verbindung."); }, 10000);
+  const sub = (col) => db.collection(col).onSnapshot(snap => {
+    S[col] = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    if(!snap.metadata.fromCache) S.ready[col] = true;
+    if(col==="plants" && S.ready.plants){ clearTimeout(timer); setStatus("Gespeichert & geteilt · "+seasonName()+"-Modus aktiv"); }
+    render();
+  }, err => { clearTimeout(timer); setStatus("Verbindung zu den Daten unterbrochen. Seite später neu öffnen."); });
+  sub("plants"); sub("wishlist"); sub("offers");
+  db.doc("meta/offers").onSnapshot(s => { S.meta = s.exists ? s.data() : {}; render(); }, ()=>{});
+}
+
+/* ---------- Pflanzen-Logik ---------- */
+function waterInterval(p){ return Math.max(2, Math.round((Number(p.waterDays)||sorte(p.species).waterDays) * seasonFactor())); }
+function plantStatus(p){
+  const t = todayIso(), st = {};
+  const wi = waterInterval(p);
+  if(p.lastWatered){ st.nextWater = addDays(p.lastWatered, wi); st.waterIn = diffDays(st.nextWater, t); }
+  else { st.nextWater = t; st.waterIn = 0; st.waterUnknown = true; }
+  st.wi = wi;
+  const fd = Number(p.fertDays) || sorte(p.species).fertDays;
+  if(fertSeason()){
+    if(p.lastFertilized){ st.nextFert = addDays(p.lastFertilized, fd); st.fertIn = diffDays(st.nextFert, t); }
+    else { st.nextFert = t; st.fertIn = 0; }
+  } else st.fertPause = true;
+  const ci = 21;
+  st.nextCheck = p.lastCheck ? addDays(p.lastCheck, ci) : t;
+  st.checkIn = diffDays(st.nextCheck, t);
+  const ry = sorte(p.species).repotYears;
+  if(p.lastRepotted){
+    const age = diffDays(t, p.lastRepotted);
+    st.repotAgeMonths = Math.floor(age/30.4);
+    st.repotDue = age >= ry*365 - 30;
+  } else st.repotUnknown = true;
+  return st;
+}
+function waterChip(st){
+  if(st.waterUnknown) return '<span class="chip warn">💧 noch nie eingetragen</span>';
+  if(st.waterIn < 0) return '<span class="chip crit">💧 überfällig '+relDays(st.waterIn)+'</span>';
+  if(st.waterIn === 0) return '<span class="chip warn">💧 heute prüfen</span>';
+  if(st.waterIn === 1) return '<span class="chip warn">💧 morgen</span>';
+  return '<span class="chip ok">💧 '+relDays(st.waterIn)+'</span>';
+}
+
+async function logAction(id, type, extra={}){
+  const p = S.plants.find(x=>x.id===id); if(!p) return;
+  const t = todayIso();
+  const data = {...p}; delete data.id;
+  const labels = {water:"Gegossen", fert:"Gedüngt", repot:"Umgetopft", check:"Pflege-Check (drehen, abstauben, Schädlinge)", skip:"Fingerprobe: noch feucht, später gießen"};
+  if(type==="water") data.lastWatered = t;
+  if(type==="fert"){ data.lastFertilized = t; data.lastWatered = t; }
+  if(type==="repot") data.lastRepotted = t;
+  if(type==="check") data.lastCheck = t;
+  if(type==="skip"){ data.lastWatered = addDays(t, -Math.max(0, waterInterval(p) - 2)); }
+  data.log = [{d:t, a:type, n:extra.note || labels[type] || type}, ...(p.log||[])].slice(0,80);
+  const ok = await put("plants", id, data);
+  if(ok) toast(labels[type] ? (p.name+": "+labels[type].split(" (")[0]) : "Gespeichert");
+}
+
+/* ---------- Views ---------- */
+const VIEWS = ["heute","pflanzen","angebote","doktor","sorten","umtopfen"];
+function currentView(){ const h = location.hash.slice(1); return VIEWS.includes(h) ? h : "heute"; }
+function render(){
+  const v = currentView();
+  document.querySelectorAll("nav.tabs a").forEach(a => a.setAttribute("aria-current", a.dataset.view===v ? "page" : "false"));
+  // Doktor-Formular nicht neu zeichnen, solange sie tippt
+  if(v==="doktor" && $("#view").dataset.v==="doktor"){ refreshDoctorPlants(); return; }
+  $("#view").dataset.v = v;
+  $("#view").innerHTML = ({heute:viewHeute, pflanzen:viewPflanzen, angebote:viewAngebote, doktor:viewDoktor, sorten:viewSorten, umtopfen:viewUmtopfen})[v]();
+  if(v==="sorten") applySortenFilter();
+}
+
+function winterBanner(){
+  const m = month();
+  if(m>=11 || m<=2) return `<div class="banner"><div style="font-size:1.6rem">❄️</div><div><b>Winterpflege ist aktiv</b>
+    <ul class="small"><li>Gießabstände werden automatisch um 50 % verlängert. Fingerprobe geht immer vor.</li>
+    <li>Kein Dünger bis März: die Pflanzen ruhen.</li>
+    <li>Heizungsluft ist der Hauptfeind. Abstand zur Heizung halten, Luftfeuchte über 50 %.</li>
+    <li>Blätter abstauben: im dunklen Winter zählt jedes bisschen Licht.</li></ul></div></div>`;
+  if(m>=3 && m<=5) return `<div class="banner"><div style="font-size:1.6rem">🌱</div><div><b>Frühling: Umtopf- und Düngezeit</b><p class="small">Jetzt ist der beste Moment zum Umtopfen. Düngen alle 2–3 Wochen, Gießabstände werden wieder kürzer.</p></div></div>`;
+  return "";
+}
+
+function buildTasks(){
+  const tasks = [];
+  for(const p of S.plants){
+    const st = plantStatus(p);
+    if(st.waterIn <= 1){
+      tasks.push({p, kind:"water", sev: st.waterIn<0?"crit":(st.waterIn===0?"warn":"info"), sort: st.waterIn,
+        ic:"💧", title: p.name+" gießen?", sub: st.waterUnknown ? "Noch kein Gießdatum eingetragen. Fingerprobe machen." : (st.waterIn<0 ? "Fällig "+relDays(st.waterIn)+" · Intervall "+st.wi+" Tage" : (st.waterIn===0?"Heute fällig":"Morgen fällig")+" · erst Fingerprobe: obere Erde trocken?")});
+    }
+    if(!st.fertPause && st.fertIn <= 0) tasks.push({p, kind:"fert", sev:"info", sort: 2+st.fertIn/100, ic:"🧪", title:p.name+" düngen", sub:"Flüssigdünger halb dosiert ins Gießwasser"});
+    if(st.checkIn <= 0) tasks.push({p, kind:"check", sev:"ok", sort: 5, ic:"🔍", title:"Pflege-Check: "+p.name, sub:"Drehen, Blätter abwischen, Unterseiten auf Schädlinge prüfen"});
+    if(st.repotDue) tasks.push({p, kind:"repot", sev: (month()>=3&&month()<=6)?"warn":"ok", sort: 6, ic:"🪴", title:p.name+" umtopfen", sub: (month()>=3&&month()<=6) ? "Letztes Umtopfen vor "+st.repotAgeMonths+" Monaten. Jetzt ist ideal." : "Vormerken fürs Frühjahr (März–Juni)"});
+  }
+  return tasks.sort((a,b)=>a.sort-b.sort);
+}
+function taskButtons(t){
+  if(t.kind==="water") return `<button class="sm primary" data-act="water" data-id="${t.p.id}">Gegossen</button><button class="sm" data-act="skip" data-id="${t.p.id}" title="Erde noch feucht: in 2 Tagen nochmal erinnern">Noch feucht</button>`;
+  if(t.kind==="fert") return `<button class="sm primary" data-act="fert" data-id="${t.p.id}">Gedüngt</button>`;
+  if(t.kind==="check") return `<button class="sm" data-act="check" data-id="${t.p.id}">Erledigt</button>`;
+  if(t.kind==="repot") return `<button class="sm" data-act="repot" data-id="${t.p.id}">Umgetopft</button>`;
+  return "";
+}
+
+function hits(){
+  const t = todayIso();
+  return S.offers.filter(o => !(o.validUntil && o.validUntil < t) && S.wishlist.some(w => matchWish(o,w)));
+}
+function matchWish(o, w){
+  if(!w.species || o.species !== w.species) return false;
+  if(w.maxPrice && Number(o.price) > Number(w.maxPrice)) return false;
+  return true;
+}
+
+function viewHeute(){
+  const tasks = buildTasks();
+  const overdue = tasks.filter(t=>t.kind==="water" && t.sev==="crit").length;
+  const waterToday = tasks.filter(t=>t.kind==="water").length;
+  const h = hits().length;
+  let html = winterBanner();
+  html += `<div class="tiles">
+    <div class="tile"><div class="v num">${S.plants.length}</div><div class="l">Pflanzenkumpels</div></div>
+    <div class="tile ${waterToday?'warn':''}"><div class="v num">${waterToday}</div><div class="l">heute/morgen gießen</div></div>
+    <div class="tile ${overdue?'crit':''}"><div class="v num">${overdue}</div><div class="l">überfällig</div></div>
+    <div class="tile ${h?'rose':''}"><div class="v num">${h}</div><div class="l">Angebote auf der Wunschliste</div></div>
+  </div>`;
+  if(!S.plants.length){
+    html += emptyPlants();
+  } else {
+    html += `<div class="section-head"><h2>Was heute ansteht</h2><span class="muted small">${new Date().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"})}</span></div>`;
+    html += tasks.length ? `<div class="list">${tasks.map(t=>`<div class="task ${t.sev}"><div class="ic">${t.ic}</div><div class="t"><b>${esc(t.title)}</b><span>${esc(t.sub)}</span></div><div class="actions">${taskButtons(t)}</div></div>`).join("")}</div>`
+      : `<div class="empty"><div style="font-size:2rem">🌿</div><p><b>Alles erledigt.</b> Deine Pflanzen sind versorgt.</p></div>`;
+    const upcoming = S.plants.map(p=>({p,st:plantStatus(p)})).filter(x=>x.st.waterIn>1).sort((a,b)=>a.st.waterIn-b.st.waterIn).slice(0,6);
+    if(upcoming.length) html += `<div class="section"><h3 style="margin-bottom:10px">Als Nächstes</h3><div class="list">${upcoming.map(x=>`<div class="task"><div class="ic">💧</div><div class="t"><b>${esc(x.p.name)}</b><span>${fmtShort(x.st.nextWater)} · ${relDays(x.st.waterIn)}</span></div></div>`).join("")}</div></div>`;
+  }
+  if(h){
+    html += `<div class="section"><div class="section-head"><h2>Treffer von der Wunschliste</h2><a href="#angebote">Alle Angebote</a></div><div class="grid">${hits().slice(0,3).map(offerCard).join("")}</div></div>`;
+  }
+  return html;
+}
+
+function emptyPlants(){
+  return `<div class="empty"><div style="font-size:2.2rem">🪴</div>
+    <p><b>Noch keine Pflanzen eingetragen.</b><br><span class="muted">Tippe auf eine Sorte, um sie mit passenden Pflegewerten anzulegen.</span></p>
+    <div class="quick">${["deliciosa","thai","adansonii","peru","standleyana","obliqua"].map(k=>`<button data-act="quickadd" data-sp="${k}">+ ${esc(SORTEN[k].name.replace("Monstera deliciosa ","").replace("Monstera ",""))}</button>`).join("")}
+    <button class="primary" data-act="new">Andere Pflanze</button></div></div>`;
+}
+
+function plantCard(p){
+  const st = plantStatus(p), so = sorte(p.species);
+  return `<article class="card">
+    <div class="photo">${p.photo ? `<img src="${esc(p.photo)}" alt="Foto von ${esc(p.name)}">` : leafSvg()}</div>
+    <div class="body">
+      <div><h3>${esc(p.name)}</h3><p class="muted small">${esc(so.name)}${p.location ? " · "+esc(p.location) : ""}</p></div>
+      <div class="meta-row">${waterChip(st)}${st.fertPause ? '<span class="chip">🧪 Düngepause</span>' : (st.fertIn<=0 ? '<span class="chip warn">🧪 düngen</span>' : '')}${st.repotDue ? '<span class="chip warn">🪴 Umtopfen fällig</span>' : ''}</div>
+      <div class="stats">
+        <div class="stat"><div class="k">Gegossen</div><div class="v num">${fmtShort(p.lastWatered)}</div></div>
+        <div class="stat"><div class="k">Intervall</div><div class="v num">${st.wi} Tage</div></div>
+        <div class="stat"><div class="k">Umgetopft</div><div class="v num">${p.lastRepotted ? fmtShort(p.lastRepotted).replace(/\.$/,"") : "?"}</div></div>
+      </div>
+      <div class="actions" style="margin-top:auto">
+        <button class="sm primary" data-act="water" data-id="${p.id}">💧 Gegossen</button>
+        <button class="sm" data-act="detail" data-id="${p.id}">Details & Verlauf</button>
+      </div>
+    </div></article>`;
+}
+function leafSvg(){ return `<svg width="70" height="70" viewBox="0 0 64 64" aria-hidden="true"><path d="M30 31 C12 30 6 16 14 8 C22 2 40 2 50 9 C60 17 54 31 30 31 Z" fill="var(--accent)"/><path d="M32 58 C32 46 31 38 30 30" stroke="var(--accent)" stroke-width="3" fill="none"/></svg>`; }
+
+function viewPflanzen(){
+  let html = `<div class="section-head"><div><h2>Meine Pflanzen</h2><p class="muted small">Gießintervall im ${seasonName()}: ×${String(seasonFactor()).replace(".",",")} gegenüber Sommer</p></div>
+    <div class="actions"><button data-act="backup" title="Alle Daten als Datei sichern">💾 Sichern</button><label class="btn" for="restore" style="font-weight:600;flex-direction:row">📂 Laden<input id="restore" type="file" accept="application/json,.json" class="hidden"></label><button data-act="ics">📅 Gießerinnerungen in den Kalender</button><button class="primary" data-act="new">+ Pflanze hinzufügen</button></div></div>`;
+  if(!S.plants.length) return html + emptyPlants();
+  const sorted = [...S.plants].sort((a,b)=>plantStatus(a).waterIn - plantStatus(b).waterIn);
+  return html + `<div class="grid">${sorted.map(plantCard).join("")}</div>`;
+}
+
+function viewSorten(){
+  return `<div class="section-head"><div><h2>Monstera-Lexikon</h2><p class="muted small">Pflege, Schwierigkeit und typische Preise der gängigen Monstera-Arten</p></div></div>
+  <div class="filterbar"><input id="sortenq" type="search" value="${esc(S.sq||"")}" placeholder="Sorte suchen, z. B. Peru, Albo, adansonii" aria-label="Sorte suchen">
+  <select id="sortendiff" aria-label="Schwierigkeit"><option value="">Alle Schwierigkeiten</option>${["Leicht","Mittel","Anspruchsvoll"].map((l,i)=>`<option value="${i+1}" ${S.sd==String(i+1)?"selected":""}>${l}</option>`).join("")}</select></div>
+  <div class="sorten">${SORT_ORDER.map(k=>{ const s=SORTEN[k]; return `<article class="card sorte" data-k="${k}" data-diff="${s.diff}" data-text="${esc((s.name+" "+s.alias+" "+s.keys.join(" ")).toLowerCase())}"><div class="body">
+    <div><h3>${esc(s.name)}</h3><p class="muted small">${esc(s.alias)}</p></div>
+    <div class="small"><span class="diff" aria-label="Schwierigkeit ${s.diff} von 3">${[1,2,3].map(i=>`<i class="${i<=s.diff?'on':''}"></i>`).join("")}</span> ${["","Leicht","Mittel","Anspruchsvoll"][s.diff]}</div>
+    <dl class="care"><dt>Licht</dt><dd>${esc(s.light)}</dd><dt>Gießen</dt><dd>${esc(s.water)} (Sommer ca. alle ${s.waterDays} Tage)</dd><dt>Luftfeuchte</dt><dd>${esc(s.humid)}</dd><dt>Wuchs</dt><dd>${esc(s.growth)}</dd><dt>Preis</dt><dd>${esc(s.price)}</dd></dl>
+    ${s.tips.map(t=>`<div class="tip">${esc(t)}</div>`).join("")}
+    <div class="actions" style="margin-top:auto"><button class="sm" data-act="quickadd" data-sp="${k}">+ Habe ich</button><button class="sm" data-act="wishadd" data-sp="${k}">♡ Auf Wunschliste</button></div>
+  </div></article>`;}).join("")}</div>
+  <p class="muted small" style="margin-top:16px">Alle Monstera enthalten Calciumoxalat und sind für Katzen, Hunde und Kinder giftig, wenn sie angeknabbert werden. Pflanzensaft beim Schneiden von der Haut waschen.</p>`;
+}
+function applySortenFilter(){
+  const q = ($("#sortenq")?.value||"").toLowerCase().trim(), d = $("#sortendiff")?.value||"";
+  document.querySelectorAll(".sorte").forEach(c=>{ c.classList.toggle("hidden", (q && !c.dataset.text.includes(q)) || (d && c.dataset.diff!==d)); });
+}
+
+function viewUmtopfen(){
+  const due = S.plants.filter(p=>plantStatus(p).repotDue);
+  const unknown = S.plants.filter(p=>!p.lastRepotted);
+  return `<div class="section-head"><div><h2>Umtopfen &amp; Erde</h2><p class="muted small">Bester Zeitraum: März bis Juni. Im ${seasonName()} nur im Notfall umtopfen.</p></div></div>
+  <div class="two">
+    <div class="panel"><h3>Ist es Zeit? Die Anzeichen</h3>
+      <ul class="small" style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">
+        <li>Wurzeln wachsen unten aus dem Abzugsloch oder kreisen sichtbar an der Topfwand.</li>
+        <li>Gießwasser läuft sofort durch, die Erde ist nach 2–3 Tagen schon wieder trocken.</li>
+        <li>Die Pflanze wird kopflastig und kippt.</li>
+        <li>Die Erde ist verdichtet, riecht muffig oder hat weiße Salzkrusten.</li>
+        <li>Spätestens nach 2 Jahren: das Substrat zerfällt und wird luftarm.</li></ul>
+      <h3>Status deiner Pflanzen</h3>
+      ${S.plants.length ? `<div class="list">${S.plants.map(p=>{const st=plantStatus(p);return `<div class="task ${st.repotDue?'warn':(st.repotUnknown?'info':'ok')}"><div class="ic">🪴</div><div class="t"><b>${esc(p.name)}</b><span>${st.repotUnknown?"Datum unbekannt. Trag es in den Details ein.":("Zuletzt "+fmtDate(p.lastRepotted)+" · vor "+st.repotAgeMonths+" Monaten")+(st.repotDue?" · fällig":"")}</span></div><button class="sm" data-act="repot" data-id="${p.id}">Heute umgetopft</button></div>`}).join("")}</div>` : '<p class="muted small">Sobald du Pflanzen einträgst, siehst du hier, wann welche dran ist.</p>'}
+    </div>
+    <div class="panel"><h3>Aroid-Mischung für Monstera</h3>
+      <p class="small">Monstera wachsen in der Natur an Bäumen. Ihre Wurzeln brauchen Luft, deshalb funktioniert reine Blumenerde auf Dauer schlecht.</p>
+      <div class="tablebox"><table class="ref"><thead><tr><th>Anteil</th><th>Zutat</th><th>Wofür</th></tr></thead><tbody>
+        <tr><td class="num">40 %</td><td>Hochwertige Zimmerpflanzenerde (torffrei)</td><td>Nährstoffe, Halt</td></tr>
+        <tr><td class="num">20 %</td><td>Pinienrinde, fein bis mittel</td><td>Luft zwischen den Wurzeln</td></tr>
+        <tr><td class="num">20 %</td><td>Perlite oder Bims</td><td>Drainage, lockert auf</td></tr>
+        <tr><td class="num">10 %</td><td>Kokoschips oder Kokosfaser</td><td>Speichert Feuchtigkeit</td></tr>
+        <tr><td class="num">10 %</td><td>Wurmhumus</td><td>Sanfter Langzeitdünger</td></tr></tbody></table></div>
+      <p class="small"><b>Für Obliqua &amp; Esqueleto:</b> mehr Rinde und Sphagnum-Moos, weniger Erde. <b>Für Peru:</b> die Standardmischung passt.</p>
+      <h3>So geht's</h3>
+      <ol class="small" style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">
+        <li>Einen Tag vorher gießen: feuchter Wurzelballen löst sich leichter.</li>
+        <li>Neuer Topf nur 2–5 cm größer im Durchmesser, immer mit Abzugsloch.</li>
+        <li>Alte Erde vorsichtig auflockern, braune matschige Wurzeln abschneiden.</li>
+        <li>Moosstab gleich mit einsetzen, nicht nachträglich in den Ballen rammen.</li>
+        <li>Gleich hoch einsetzen wie vorher, leicht andrücken, angießen.</li>
+        <li>4–6 Wochen nicht düngen: frische Erde hat genug Nährstoffe.</li></ol>
+      <p class="small muted">Einkaufsliste: Pinienrinde, Perlite, Kokoschips und Wurmhumus gibt es in Baumärkten und Gartencentern; Aroid-Fertigmischungen bei spezialisierten Onlineshops.</p>
+    </div>
+  </div>`;
+}
+
+function offerCard(o){
+  const t = todayIso();
+  const expired = o.validUntil && o.validUntil < t;
+  const hit = !expired && S.wishlist.some(w=>matchWish(o,w));
+  const typ = {aktion:'<span class="chip rose">Aktion</span>', dauer:'<span class="chip">Dauerpreis</span>', hinweis:'<span class="chip warn">Preis-Hinweis</span>', eigen:'<span class="chip ok">Selbst entdeckt</span>'}[o.type] || "";
+  return `<article class="card offer ${hit?'hit':''} ${expired?'expired':''}"><div class="body">
+    <div class="meta-row">${typ}${hit?'<span class="chip rose">♡ Wunschliste</span>':''}${expired?'<span class="chip">abgelaufen</span>':''}</div>
+    <div><h3>${esc(o.title)}</h3><p class="muted small">${esc(o.shop||"")}</p></div>
+    ${o.price ? `<div class="price num">${euro(o.price)}${o.regular?`<s>${euro(o.regular)}</s>`:""}</div>` : ""}
+    ${o.note ? `<p class="small">${esc(o.note)}</p>` : ""}
+    <p class="muted small">${o.validFrom||o.validUntil ? "Gültig "+(o.validFrom?"ab "+fmtShort(o.validFrom)+" ":"")+(o.validUntil?"bis "+fmtShort(o.validUntil):"") : ""}${(o.validFrom||o.validUntil)&&o.foundAt?" · ":""}${o.foundAt?"gefunden "+fmtShort(o.foundAt):""}</p>
+    <div class="actions" style="margin-top:auto">${o.url?`<a class="btn sm primary" href="${esc(o.url)}" target="_blank" rel="noopener">Zum Angebot</a>`:""}<button class="sm ghost" data-act="deloffer" data-id="${o.id}" aria-label="Angebot entfernen">Entfernen</button></div>
+  </div></article>`;
+}
+
+function viewAngebote(){
+  const t = todayIso();
+  const showOld = !!S.showOld;
+  const offers = [...S.offers].filter(o=>showOld || !(o.validUntil && o.validUntil < t))
+    .sort((a,b)=>{ const ha = S.wishlist.some(w=>matchWish(a,w))?0:1, hb = S.wishlist.some(w=>matchWish(b,w))?0:1; return ha-hb || (b.foundAt||"").localeCompare(a.foundAt||""); });
+  const opts = SORT_ORDER.map(k=>`<option value="${k}">${esc(SORTEN[k].name)}</option>`).join("");
+  const kSearch = q => "https://www.kleinanzeigen.de/s-"+encodeURIComponent(q.toLowerCase().replace(/\s+/g,"-"))+"/k0";
+  return `<div class="section-head"><div><h2>Angebote</h2><p class="muted small">${S.meta.updatedAt ? "Zuletzt von Claude geprüft: "+fmtDate(S.meta.updatedAt)+". " : ""}Claude sucht jeden Sonntag nach neuen Monstera-Angeboten und trägt sie hier ein. Selbst eingetragene Angebote bleiben nur auf diesem Gerät.</p></div>
+    <div class="actions"><button data-act="addoffer">+ Angebot selbst eintragen</button></div></div>
+
+  <div class="panel" style="margin-bottom:18px">
+    <h3>Wunschliste</h3>
+    <p class="small muted">Trag ein, welche Sorte du suchst und was sie höchstens kosten darf. Passende Angebote werden markiert und Claude sucht beim wöchentlichen Check gezielt danach.</p>
+    <form id="wishform" class="form-grid" style="grid-template-columns:2fr 1fr auto;align-items:end">
+      <label for="wsp">Sorte<select id="wsp" required>${opts}</select></label>
+      <label for="wmax">Höchstpreis (€)<input id="wmax" type="number" min="0" step="0.5" inputmode="decimal" placeholder="z. B. 20"></label>
+      <button class="primary" type="submit">Merken</button>
+    </form>
+    <div class="list">${S.wishlist.length ? S.wishlist.map(w=>`<div class="wish"><span>♡</span><div class="t"><b>${esc(sorte(w.species).name)}</b> <span class="muted small">${w.maxPrice?"bis "+euro(w.maxPrice):"ohne Preislimit"}</span></div><a class="small" href="${kSearch(sorte(w.species).name.replace(/[\'()]/g,""))}" target="_blank" rel="noopener">Kleinanzeigen</a><button class="sm ghost" data-act="delwish" data-id="${w.id}" aria-label="Von Wunschliste entfernen">✕</button></div>`).join("") : '<p class="muted small">Noch leer.</p>'}</div>
+  </div>
+
+  <div class="section-head"><h3>Aktuelle Fundstücke</h3><label style="flex-direction:row;align-items:center;gap:6px;font-weight:500"><input type="checkbox" id="showold" style="width:auto;min-height:0" ${showOld?"checked":""}> abgelaufene zeigen</label></div>
+  ${offers.length ? `<div class="grid">${offers.map(offerCard).join("")}</div>` : '<div class="empty"><p class="muted">Gerade keine Angebote eingetragen. Der nächste Check läuft am Sonntag.</p></div>'}
+
+  <div class="section"><h3 style="margin-bottom:10px">Selbst stöbern</h3>
+    <div class="actions">
+      <a class="btn" href="https://www.kaufda.de/Angebote/Monstera" target="_blank" rel="noopener">Prospekte (kaufDA)</a>
+      <a class="btn" href="https://www.marktguru.de/search/monstera" target="_blank" rel="noopener">Prospekte (marktguru)</a>
+      <a class="btn" href="https://www.kleinanzeigen.de/s-monstera/k0" target="_blank" rel="noopener">Kleinanzeigen</a>
+      <a class="btn" href="https://www.ebay.de/sch/i.html?_nkw=monstera" target="_blank" rel="noopener">eBay</a>
+    </div>
+    <p class="small muted" style="margin-top:8px">Tipp: Discounter (Lidl, Aldi, Netto, Kaufland) haben Monstera meist saisonal im Frühjahr und Herbst, oft für 10–17 €. Ableger von privat sind die günstigste Art, an seltenere Sorten zu kommen.</p>
+  </div>
+
+  <div class="section"><h3 style="margin-bottom:10px">Preis-Kompass: Was ist ein guter Preis?</h3>
+    <div class="tablebox"><table class="ref"><thead><tr><th>Sorte</th><th>Üblicher Preis</th><th>Schwierigkeit</th></tr></thead><tbody>
+    ${SORT_ORDER.map(k=>`<tr><td>${esc(SORTEN[k].name)}</td><td>${esc(SORTEN[k].price)}</td><td>${["","Leicht","Mittel","Anspruchsvoll"][SORTEN[k].diff]}</td></tr>`).join("")}
+    </tbody></table></div></div>`;
+}
+
+function viewDoktor(){
+  const plantOpts = `<option value="">(keine bestimmte)</option>` + S.plants.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+  return `<div class="section-head"><div><h2>Pflanzendoktor</h2><p class="muted small">Häufige Probleme nachschlagen oder Claude mit Foto fragen</p></div></div>
+  <div class="two">
+    <div class="panel" id="askpanel">
+      <h3>Claude fragen</h3>
+      <label for="dplant">Welche Pflanze?<select id="dplant">${plantOpts}</select></label>
+      <label for="dq">Was fällt dir auf?<textarea id="dq" placeholder="z. B. Die neuen Blätter von meiner Thai Constellation haben braune Ränder an den weißen Stellen. Sie steht im Wohnzimmer am Ostfenster."></textarea></label>
+      <label for="dimg" id="dimgwrap">Foto (optional)<input id="dimg" type="file" accept="image/*"></label>
+      <div class="actions"><button class="primary" id="dask" data-act="ask">${S.mode==="local"?"In Claude fragen":"Diagnose holen"}</button><button class="ghost hidden" id="dstop" data-act="stopask">Abbrechen</button></div>
+      <div class="answer" id="danswer" aria-live="polite"></div>
+      <p class="small muted" id="dnote">${S.mode==="local"?"Öffnet Claude in einem neuen Tab, Frage und Pflegedaten sind schon eingetragen.":"Claude bekommt die Pflegedaten der gewählten Pflanze mitgeschickt."}</p>
+    </div>
+    <div>
+      <h3 style="margin-bottom:10px">Symptome nachschlagen</h3>
+      <div class="list">${SYMPTOME.map(s=>`<details class="sym"><summary>${esc(s.t)}</summary><div class="in"><p><b>Ursache:</b> ${esc(s.c)}</p><ul style="margin:0;padding-left:18px">${s.d.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div></details>`).join("")}</div>
+    </div>
+  </div>`;
+}
+function refreshDoctorPlants(){
+  const sel = $("#dplant"); if(!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = `<option value="">(keine bestimmte)</option>` + S.plants.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+  sel.value = cur;
+}
+
+/* ---------- Formulare / Overlays ---------- */
+function openSheet(html){ $("#sheet").innerHTML = html; $("#overlay").classList.add("open"); const f = $("#sheet").querySelector("input,select,textarea,button"); f && f.focus(); }
+function closeSheet(){ $("#overlay").classList.remove("open"); $("#sheet").innerHTML = ""; }
+
+function plantForm(p){
+  const isNew = !p.id;
+  const sp = p.species || "deliciosa", so = sorte(sp);
+  return `<div class="sheet-head"><h2 id="sheet-title">${isNew?"Neue Pflanze":"Pflanze bearbeiten"}</h2><button class="ghost" data-act="close" aria-label="Schließen">✕</button></div>
+  <form id="plantform" class="form-grid" data-id="${p.id||""}">
+    <label class="full" for="pname">Name oder Spitzname<input id="pname" required maxlength="60" value="${esc(p.name||"")}" placeholder="z. B. Monti"></label>
+    <label for="psp">Sorte<select id="psp">${[...SORT_ORDER,"andere"].map(k=>`<option value="${k}" ${k===sp?"selected":""}>${esc(SORTEN[k].name)}</option>`).join("")}</select></label>
+    <label for="ploc">Standort<input id="ploc" maxlength="60" value="${esc(p.location||"")}" placeholder="z. B. Wohnzimmer, Ostfenster"></label>
+    <label for="pwd">Gießen alle … Tage (Sommer)<input id="pwd" type="number" min="1" max="60" value="${esc(p.waterDays||so.waterDays)}"><span class="hint">Im Winter automatisch ×1,5</span></label>
+    <label for="pfd">Düngen alle … Tage (März–Sept.)<input id="pfd" type="number" min="7" max="90" value="${esc(p.fertDays||so.fertDays)}"></label>
+    <label for="plw">Zuletzt gegossen<input id="plw" type="date" value="${esc(p.lastWatered||todayIso())}" max="${todayIso()}"></label>
+    <label for="plr">Zuletzt umgetopft<input id="plr" type="date" value="${esc(p.lastRepotted||"")}" max="${todayIso()}"><span class="hint">Leer lassen, wenn unbekannt</span></label>
+    <label for="ppot">Topfgröße (cm)<input id="ppot" type="number" min="5" max="60" value="${esc(p.pot||"")}" placeholder="z. B. 17"></label>
+    <label for="pacq">Bei uns seit<input id="pacq" type="date" value="${esc(p.acquired||"")}" max="${todayIso()}"></label>
+    <label class="full" for="pphoto">Foto<input id="pphoto" type="file" accept="image/*"><span class="hint">Wird verkleinert gespeichert.</span></label>
+    <label class="full" for="pnotes">Notizen<textarea id="pnotes" maxlength="1500" placeholder="z. B. Neues Blatt entrollt sich, Moosstab seit Mai">${esc(p.notes||"")}</textarea></label>
+    <div class="full actions" style="justify-content:space-between">
+      ${isNew?"<span></span>":`<button type="button" class="danger" data-act="delplant" data-id="${p.id}">Pflanze löschen</button>`}
+      <div class="actions"><button type="button" data-act="close">Abbrechen</button><button class="primary" type="submit">Speichern</button></div>
+    </div>
+  </form>`;
+}
+
+function detailSheet(p){
+  const st = plantStatus(p), so = sorte(p.species);
+  const names = {water:"💧",fert:"🧪",repot:"🪴",check:"🔍",skip:"👆",note:"📝"};
+  return `<div class="sheet-head"><h2 id="sheet-title">${esc(p.name)}</h2><button class="ghost" data-act="close" aria-label="Schließen">✕</button></div>
+  ${p.photo?`<div class="photo" style="border-radius:12px"><img src="${esc(p.photo)}" alt="Foto von ${esc(p.name)}"></div>`:""}
+  <p class="muted small">${esc(so.name)}${p.location?" · "+esc(p.location):""}${p.pot?" · Topf "+esc(p.pot)+" cm":""}${p.acquired?" · bei uns seit "+fmtDate(p.acquired):""}</p>
+  <div class="meta-row">${waterChip(st)}</div>
+  <div class="stats">
+    <div class="stat"><div class="k">Nächstes Gießen</div><div class="v num">${fmtShort(st.nextWater)}</div></div>
+    <div class="stat"><div class="k">Düngen</div><div class="v num">${st.fertPause?"Pause bis März":fmtShort(st.nextFert)}</div></div>
+    <div class="stat"><div class="k">Pflege-Check</div><div class="v num">${fmtShort(st.nextCheck)}</div></div>
+  </div>
+  ${so.light!=="–"?`<dl class="care"><dt>Licht</dt><dd>${esc(so.light)}</dd><dt>Gießen</dt><dd>${esc(so.water)}</dd><dt>Luftfeuchte</dt><dd>${esc(so.humid)}</dd></dl>`:""}
+  ${p.notes?`<div class="tip">${esc(p.notes)}</div>`:""}
+  <div class="actions">
+    <button class="sm primary" data-act="water" data-id="${p.id}">💧 Gegossen</button>
+    <button class="sm" data-act="fert" data-id="${p.id}">🧪 Gedüngt</button>
+    <button class="sm" data-act="check" data-id="${p.id}">🔍 Check gemacht</button>
+    <button class="sm" data-act="repot" data-id="${p.id}">🪴 Umgetopft</button>
+  </div>
+  <form id="noteform" data-id="${p.id}" class="actions" style="flex-wrap:nowrap"><input id="noteinput" maxlength="200" placeholder="Notiz fürs Tagebuch, z. B. neues Blatt!" aria-label="Notiz"><button class="sm" type="submit">Eintragen</button></form>
+  <h3>Pflanzentagebuch</h3>
+  <div class="log">${(p.log||[]).length ? p.log.map(l=>`<div><span class="num">${fmtDate(l.d)}</span><span>${names[l.a]||"•"} ${esc(l.n)}</span></div>`).join("") : '<p class="muted small">Noch keine Einträge.</p>'}</div>
+  <div class="actions" style="justify-content:space-between"><button data-act="edit" data-id="${p.id}">Bearbeiten</button><button data-act="close">Schließen</button></div>`;
+}
+
+function offerForm(){
+  return `<div class="sheet-head"><h2 id="sheet-title">Angebot eintragen</h2><button class="ghost" data-act="close" aria-label="Schließen">✕</button></div>
+  <form id="offerform" class="form-grid">
+    <label class="full" for="otitle">Was?<input id="otitle" required maxlength="100" placeholder="z. B. Thai Constellation 12er Topf"></label>
+    <label for="osp">Sorte<select id="osp">${[...SORT_ORDER,"andere"].map(k=>`<option value="${k}">${esc(SORTEN[k].name)}</option>`).join("")}</select></label>
+    <label for="oshop">Wo?<input id="oshop" maxlength="60" placeholder="z. B. Kaufland, Blume 2000"></label>
+    <label for="oprice">Preis (€)<input id="oprice" type="number" min="0" step="0.01" inputmode="decimal"></label>
+    <label for="ountil">Gültig bis<input id="ountil" type="date"></label>
+    <label class="full" for="ourl">Link (optional)<input id="ourl" type="url" placeholder="https://"></label>
+    <div class="full actions" style="justify-content:flex-end"><button type="button" data-act="close">Abbrechen</button><button class="primary" type="submit">Speichern</button></div>
+  </form>`;
+}
+
+async function compressImage(file, max=520, q=0.72){
+  const url = URL.createObjectURL(file);
+  try{
+    const img = await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=url; });
+    const r = Math.min(1, max/Math.max(img.width,img.height));
+    const c = document.createElement("canvas"); c.width=Math.round(img.width*r); c.height=Math.round(img.height*r);
+    c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+    return c.toDataURL("image/jpeg", q);
+  } finally { URL.revokeObjectURL(url); }
+}
+
+async function savePlantForm(form){
+  const id = form.dataset.id || uid();
+  const old = S.plants.find(p=>p.id===id) || {};
+  const data = {...old}; delete data.id;
+  data.name = $("#pname").value.trim() || "Neue Pflanze";
+  data.species = $("#psp").value;
+  data.location = $("#ploc").value.trim();
+  data.waterDays = Number($("#pwd").value) || sorte(data.species).waterDays;
+  data.fertDays = Number($("#pfd").value) || sorte(data.species).fertDays;
+  data.lastWatered = $("#plw").value || "";
+  data.lastRepotted = $("#plr").value || "";
+  data.pot = $("#ppot").value || "";
+  data.acquired = $("#pacq").value || "";
+  data.notes = $("#pnotes").value.trim();
+  const f = $("#pphoto").files[0];
+  if(f){ try{ data.photo = await compressImage(f); }catch(e){ toast("Foto konnte nicht gelesen werden."); } }
+  if(!old.name){ data.log = [{d:todayIso(), a:"note", n:"Eingezogen 🌿"}]; data.lastCheck = todayIso(); }
+  data.createdAt = data.createdAt || todayIso();
+  const ok = await put("plants", id, data);
+  if(ok){ closeSheet(); toast(old.name ? "Gespeichert" : data.name+" ist eingezogen"); }
+}
+
+async function quickAdd(sp){
+  const s = SORTEN[sp];
+  const short = s.name.replace("Monstera deliciosa ","").replace("Monstera ","").replace(/[\'"]/g,"").replace(/\s*\(.*\)/,"");
+  openSheet(plantForm({species:sp, name:"", waterDays:s.waterDays, fertDays:s.fertDays}));
+  $("#pname").placeholder = "z. B. "+short;
+}
+
+/* ---------- Kalender-Export ---------- */
+function buildIcs(){
+  const stamp = new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d+Z$/,"Z");
+  const lines = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Schatzis Dschungel//DE","CALSCALE:GREGORIAN","X-WR-CALNAME:Pflanzen gießen"];
+  for(const p of S.plants){
+    const st = plantStatus(p);
+    const start = st.waterIn < 0 ? todayIso() : st.nextWater;
+    lines.push("BEGIN:VEVENT","UID:"+p.id+"-water@schatzis-dschungel","DTSTAMP:"+stamp,
+      "DTSTART;VALUE=DATE:"+start.replace(/-/g,""),"RRULE:FREQ=DAILY;INTERVAL="+st.wi,
+      "SUMMARY:💧 "+p.name.replace(/[,;]/g," ")+" gießen?",
+      "DESCRIPTION:Fingerprobe machen: obere Erde trocken? Dann gründlich gießen und überschüssiges Wasser abgießen.",
+      "BEGIN:VALARM","ACTION:DISPLAY","TRIGGER:PT9H","DESCRIPTION:Pflanze gießen","END:VALARM","END:VEVENT");
+  }
+  lines.push("END:VCALENDAR");
+  return lines.join("\r\n");
+}
+
+/* ---------- Claude fragen ---------- */
+let askCtrl = null;
+async function askClaude(){
+  const q = $("#dq").value.trim();
+  const out = $("#danswer");
+  if(!q){ $("#dq").focus(); toast("Beschreib kurz, was dir auffällt."); return; }
+  const p = S.plants.find(x=>x.id===$("#dplant").value);
+  let ctx = "";
+  if(p){
+    const st = plantStatus(p), so = sorte(p.species);
+    ctx = `Pflanze: ${p.name}, Sorte: ${so.name}. Standort: ${p.location||"unbekannt"}. Topf: ${p.pot?p.pot+" cm":"unbekannt"}. Zuletzt gegossen: ${p.lastWatered||"unbekannt"} (Intervall aktuell ${st.wi} Tage). Zuletzt gedüngt: ${p.lastFertilized||"unbekannt"}. Zuletzt umgetopft: ${p.lastRepotted||"unbekannt"}. Notizen: ${p.notes||"-"}. Letzte Tagebucheinträge: ${(p.log||[]).slice(0,6).map(l=>l.d+" "+l.n).join("; ")||"-"}.`;
+  }
+  const prompt = `Du bist eine freundliche, erfahrene Zimmerpflanzen-Beraterin mit Schwerpunkt Monstera und Aronstabgewächse. Antworte auf Deutsch, warmherzig und konkret, höchstens 220 Wörter. Gliederung mit fett gesetzten Zwischenzeilen: **Was es wahrscheinlich ist**, **Was du jetzt tun kannst**, **Worauf du die nächsten Wochen achten solltest**. Wenn mehrere Ursachen in Frage kommen, nenne die zwei wahrscheinlichsten und wie man sie unterscheidet. Wenn ein Foto dabei ist, beschreibe kurz, was du darauf siehst. Keine Panikmache.\n\nHeute ist der ${fmtDate(todayIso())} (${seasonName()} in Deutschland, Heizperiode beachten).\n${ctx}\n\nBeobachtung: ${q}`;
+  if(!sampleApi){
+    const url = "https://claude.ai/new?q=" + encodeURIComponent(prompt + ($("#dimg").files[0] ? "\n\n(Ich hänge gleich ein Foto an.)" : ""));
+    window.open(url, "_blank", "noopener");
+    out.textContent = "Claude öffnet sich in einem neuen Tab, die Frage samt Pflegedaten ist schon eingetragen."+($("#dimg").files[0]?" Häng dort dein Foto noch per Büroklammer an.":"");
+    return;
+  }
+  const opts = { modelTier:"default", cache:false };
+  const f = $("#dimg").files[0];
+  try{
+    if(f){
+      const lim = await sampleApi.limits?.();
+      if(lim && lim.images){ const dataUrl = await compressImage(f, 1024, 0.82); const blob = await (await fetch(dataUrl)).blob(); opts.images = [blob]; }
+    }
+  }catch(e){ /* ohne Bild weiter */ }
+  askCtrl = new AbortController(); opts.signal = askCtrl.signal;
+  opts.onText = ({text}) => { out.innerHTML = fmtAnswer(text); };
+  $("#dask").disabled = true; $("#dstop").classList.remove("hidden");
+  out.textContent = "Claude schaut sich das an …";
+  try{
+    const r = await sampleApi(prompt, opts);
+    out.innerHTML = fmtAnswer(r.text);
+    if(p && r.text){
+      const data = {...p}; delete data.id;
+      data.log = [{d:todayIso(), a:"note", n:"Pflanzendoktor gefragt: "+q.slice(0,120)}, ...(p.log||[])].slice(0,80);
+      put("plants", p.id, data);
+    }
+  }catch(e){
+    if(e && e.code==="not_granted"){ out.textContent = "Ohne Zustimmung kann Claude hier nicht antworten. Die Symptomliste rechts hilft trotzdem."; }
+    else if(e && e.code==="rate_limited"){ out.textContent = "Gerade zu viele Anfragen. Bitte in ein paar Minuten nochmal."; }
+    else if(e && e.name==="AbortError"){ out.textContent = "Abgebrochen."; }
+    else out.textContent = (e && e.text) ? e.text : "Das hat nicht geklappt. Bitte nochmal versuchen.";
+  }finally{ $("#dask") && ($("#dask").disabled = false); $("#dstop") && $("#dstop").classList.add("hidden"); askCtrl = null; }
+}
+function fmtAnswer(t){ return esc(t||"").replace(/\*\*(.+?)\*\*/g,"<b>$1</b>"); }
+
+/* ---------- Events ---------- */
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-act]"); if(!b) return;
+  const act = b.dataset.act, id = b.dataset.id;
+  if(["water","fert","check","repot","skip"].includes(act)){
+    b.disabled = true; await logAction(id, act); b.disabled = false;
+    const p = S.plants.find(x=>x.id===id);
+    if($("#overlay").classList.contains("open") && p && $("#noteform")) openSheet(detailSheet(p));
+    return;
+  }
+  if(act==="new") return openSheet(plantForm({}));
+  if(act==="quickadd") return quickAdd(b.dataset.sp);
+  if(act==="detail"){ const p=S.plants.find(x=>x.id===id); if(p) openSheet(detailSheet(p)); return; }
+  if(act==="edit"){ const p=S.plants.find(x=>x.id===id); if(p) openSheet(plantForm(p)); return; }
+  if(act==="close") return closeSheet();
+  if(act==="delplant"){
+    if(b.dataset.confirm!=="1"){ b.dataset.confirm="1"; b.textContent="Wirklich löschen?"; return; }
+    if(await del("plants", id)){ closeSheet(); toast("Pflanze entfernt"); } return;
+  }
+  if(act==="wishadd"){
+    const sp = b.dataset.sp;
+    if(S.wishlist.some(w=>w.species===sp)){ toast("Steht schon auf der Wunschliste"); return; }
+    if(await put("wishlist", uid(), {species:sp, maxPrice:"", addedAt:todayIso()})) toast("Auf die Wunschliste gesetzt ♡");
+    return;
+  }
+  if(act==="delwish"){ await del("wishlist", id); return; }
+  if(act==="deloffer"){
+    if(b.dataset.confirm!=="1"){ b.dataset.confirm="1"; b.textContent="Sicher?"; return; }
+    S.hidden = [...new Set([...(S.hidden||[]), id])]; await del("offers", id); return;
+  }
+  if(act==="addoffer") return openSheet(offerForm());
+  if(act==="backup") return exportBackup();
+  if(act==="ask") return askClaude();
+  if(act==="stopask"){ askCtrl && askCtrl.abort(); return; }
+  if(act==="ics"){
+    if(!S.plants.length){ toast("Erst Pflanzen eintragen."); return; }
+    const ics = buildIcs();
+    if(downloads){
+      try{ await downloads.save({filename:"pflanzen-giessen.ics", data:ics}); toast("Kalenderdatei bereit. Öffnen, um sie zu importieren."); }
+      catch(err){ toast("Download abgebrochen."); }
+    } else {
+      saveBlob(new Blob([ics],{type:"text/calendar"}), "pflanzen-giessen.ics"); toast("Kalenderdatei geladen. Öffnen, um sie zu importieren.");
+    }
+    return;
+  }
+});
+document.addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = e.target;
+  if(f.id==="plantform"){ const btn=f.querySelector('[type=submit]'); btn.disabled=true; await savePlantForm(f); btn.disabled=false; }
+  if(f.id==="wishform"){
+    const sp = $("#wsp").value, max = $("#wmax").value;
+    const ex = S.wishlist.find(w=>w.species===sp);
+    if(await put("wishlist", ex?ex.id:uid(), {species:sp, maxPrice: max?Number(max):"", addedAt: ex?.addedAt||todayIso()})) toast("Gemerkt ♡");
+  }
+  if(f.id==="offerform"){
+    const data = {title:$("#otitle").value.trim(), species:$("#osp").value, shop:$("#oshop").value.trim(), price: $("#oprice").value?Number($("#oprice").value):"", validUntil:$("#ountil").value||"", url:$("#ourl").value.trim(), type:"eigen", foundAt:todayIso()};
+    if(data.url && !/^https?:\/\//i.test(data.url)) data.url = "https://"+data.url;
+    if(await put("offers", uid(), data)){ closeSheet(); toast("Angebot eingetragen"); }
+  }
+  if(f.id==="noteform"){
+    const v = $("#noteinput").value.trim(); if(!v) return;
+    const p = S.plants.find(x=>x.id===f.dataset.id); if(!p) return;
+    const data = {...p}; delete data.id;
+    data.log = [{d:todayIso(), a:"note", n:v}, ...(p.log||[])].slice(0,80);
+    if(await put("plants", p.id, data)){ const np = {...data, id:p.id}; openSheet(detailSheet(np)); }
+  }
+});
+document.addEventListener("input", e => { if(e.target.id==="sortenq"){ S.sq=e.target.value; applySortenFilter(); } });
+document.addEventListener("change", e => {
+  if(e.target.id==="sortendiff"){ S.sd=e.target.value; applySortenFilter(); }
+  if(e.target.id==="showold"){ S.showOld = e.target.checked; render(); }
+  if(e.target.id==="restore" && e.target.files[0]) importBackup(e.target.files[0]);
+});
+$("#overlay").addEventListener("click", e => { if(e.target.id==="overlay") closeSheet(); });
+document.addEventListener("keydown", e => { if(e.key==="Escape" && $("#overlay").classList.contains("open")) closeSheet(); });
+window.addEventListener("hashchange", () => { $("#view").dataset.v = ""; render(); window.scrollTo(0,0); });
+
+/* ---------- Start ---------- */
+render();
+(async () => {
+  const use = window.claude && window.claude.use ? window.claude.use.bind(window.claude) : null;
+  if(!use){
+    S.mode="local"; loadPersisted();
+    setStatus("Gespeichert auf diesem Gerät · "+seasonName()+"-Modus aktiv");
+    const n = $("#dnote"); if(n) n.textContent = "Öffnet Claude in einem neuen Tab, Frage und Pflegedaten sind schon eingetragen.";
+    const b = $("#dask"); if(b) b.textContent = "In Claude fragen";
+    render(); loadRemoteOffers(); return;
+  }
+  const [d, smp, dl, usr] = await Promise.all([use("db").catch(()=>null), use("sample").catch(()=>null), use("downloads").catch(()=>null), use("user").catch(()=>null)]);
+  sampleApi = smp; downloads = dl;
+  if(usr && typeof usr.can === "function"){ try{ const c = await usr.can("data.write"); if(c===false) S.readOnly = true; }catch(e){} }
+  if(d){ db = d; S.mode="db"; subscribe(); }
+  else { S.mode="local"; setStatus("Nicht angemeldet: Änderungen werden nur in dieser Sitzung gehalten."); }
+  if(!sampleApi){ const n = $("#dnote"); if(n) n.textContent = "Die Claude-Diagnose ist in dieser Ansicht nicht verfügbar; die Symptomliste hilft trotzdem."; }
+  render();
+})();
+</script>
+</body>
+</html>

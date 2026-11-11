@@ -1,0 +1,60 @@
+{
+  "updatedAt": "2026-11-11",
+  "offers": [
+    {
+      "id": "hornbach-thai-12",
+      "title": "Monstera 'Thai Constellation', 12-cm-Topf, ca. 25 cm hoch",
+      "species": "thai",
+      "shop": "Hornbach (online & Markt)",
+      "price": 14.95,
+      "type": "dauer",
+      "url": "https://www.hornbach.de/p/fensterblatt-floraself-monstera-thai-constellation-h-ca-25-cm-o-12-cm-topf/12607526/",
+      "note": "Regulärer Preis, aber für eine Thai Constellation sehr günstig. Verfügbarkeit je Markt prüfen.",
+      "foundAt": "2026-11-11"
+    },
+    {
+      "id": "jungleleaves-thai",
+      "title": "Monstera deliciosa 'Thai Constellation'",
+      "species": "thai",
+      "shop": "Jungle Leaves (Onlineshop)",
+      "price": 19.99,
+      "type": "dauer",
+      "url": "https://www.jungle-leaves.de/en/products/monstera-deliciosa-thai-constellation",
+      "note": "Zzgl. Versand. Pflanzenversand im Winter nur mit Wärmepack.",
+      "foundAt": "2026-11-11"
+    },
+    {
+      "id": "jungleleaves-obliqua",
+      "title": "Monstera obliqua 'Peru'",
+      "species": "obliqua",
+      "shop": "Jungle Leaves (Onlineshop)",
+      "price": 14.99,
+      "type": "dauer",
+      "url": "https://www.jungle-leaves.de/en/products/monstera-obliqua-peru",
+      "note": "Braucht sehr hohe Luftfeuchte, am besten eine Pflanzenvitrine.",
+      "foundAt": "2026-11-11"
+    },
+    {
+      "id": "foliagefactory-obliqua",
+      "title": "Monstera obliqua 'Peru', Baby-Pflanze (6-cm-Topf)",
+      "species": "obliqua",
+      "shop": "Foliage Factory (Onlineshop)",
+      "price": 5.95,
+      "type": "dauer",
+      "url": "https://www.foliage-factory.com/monstera-obliqua-peru",
+      "note": "Ab-Preis für die kleinste Größe, zzgl. Versand.",
+      "foundAt": "2026-11-11"
+    },
+    {
+      "id": "kaufland-thai-hinweis",
+      "title": "Thai Constellation bei Kaufland & Blume 2000",
+      "species": "thai",
+      "shop": "Kaufland, Blume 2000 (Filialen)",
+      "price": 14.99,
+      "type": "hinweis",
+      "url": "https://www.echo24.de/verbraucher/rennt-alle-zu-kaufland-garten-fans-entdecken-trendpflanze-zum-spottpreis-94135774.html",
+      "note": "Preis-Hinweis aus Januar 2026: Kaufland 14,99 €, Blume 2000 16,99 €. Kein aktuelles Angebot, aber ein guter Vergleichswert.",
+      "foundAt": "2026-11-11"
+    }
+  ]
+}
