@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-11",
+  "updatedAt": "2026-11-15",
   "offers": [
     {
       "id": "hornbach-thai-12",
@@ -55,6 +55,88 @@
       "url": "https://www.echo24.de/verbraucher/rennt-alle-zu-kaufland-garten-fans-entdecken-trendpflanze-zum-spottpreis-94135774.html",
       "note": "Preis-Hinweis aus Januar 2026: Kaufland 14,99 €, Blume 2000 16,99 €. Kein aktuelles Angebot, aber ein guter Vergleichswert.",
       "foundAt": "2026-11-11"
+    },
+    {
+      "id": "plnts-albo-superwhite-20261115",
+      "title": "Monstera deliciosa Variegata 'Super White', Größe L (Ø 15 cm, ca. 45 cm)",
+      "species": "albo",
+      "shop": "PLNTS (Onlineshop)",
+      "price": 39.99,
+      "regular": 84.99,
+      "type": "aktion",
+      "url": "https://plnts.com/de/product/monstera-deliciosa-variegata-super-white-l",
+      "note": "Sale −53 %, Enddatum nicht angegeben. Zzgl. Versand.",
+      "foundAt": "2026-11-15"
+    },
+    {
+      "id": "plnts-albo-20261115",
+      "title": "Monstera deliciosa Variegata ('Borsigiana'), Größe L (Ø 15 cm, ca. 45 cm)",
+      "species": "albo",
+      "shop": "PLNTS (Onlineshop)",
+      "price": 39.99,
+      "regular": 59.99,
+      "type": "aktion",
+      "url": "https://plnts.com/de/product/monstera-deliciosa-variegated",
+      "note": "Sale −33 %, Enddatum nicht angegeben. Zzgl. Versand.",
+      "foundAt": "2026-11-15"
+    },
+    {
+      "id": "plnts-obliqua-20261115",
+      "title": "Monstera obliqua, Größe M (Ø 12 cm, ca. 20 cm)",
+      "species": "obliqua",
+      "shop": "PLNTS (Onlineshop)",
+      "price": 9.99,
+      "regular": 22.99,
+      "type": "aktion",
+      "url": "https://plnts.com/de/product/monstera-obliqua-m",
+      "note": "Sale −57 %. Shop nennt die Form nicht ausdrücklich, vermutlich 'Peru'. Braucht hohe Luftfeuchte.",
+      "foundAt": "2026-11-15"
+    },
+    {
+      "id": "plnts-adansonii-var-20261115",
+      "title": "Monstera adansonii Variegata, Größe M (Ø 12 cm, ca. 25 cm)",
+      "species": "adansonii",
+      "shop": "PLNTS (Onlineshop)",
+      "price": 29.99,
+      "regular": 50.99,
+      "type": "aktion",
+      "url": "https://plnts.com/de/product/monstera-adansonii-variegated",
+      "note": "Sale −41 %, Enddatum nicht angegeben. Zzgl. Versand.",
+      "foundAt": "2026-11-15"
+    },
+    {
+      "id": "plnts-frozenfreckles-20261115",
+      "title": "Monstera 'Frozen Freckles', Größe M",
+      "species": "andere",
+      "shop": "PLNTS (Onlineshop)",
+      "price": 14.99,
+      "regular": 21.99,
+      "type": "aktion",
+      "url": "https://plnts.com/de/product/monstera-frozen-freckles-m",
+      "note": "Gesprenkelte deliciosa-Sorte, Sale −32 %. Zzgl. Versand.",
+      "foundAt": "2026-11-15"
+    },
+    {
+      "id": "hornbach-albo-20261115",
+      "title": "Monstera deliciosa 'Variegata', ca. 45 cm, 15-cm-Topf",
+      "species": "albo",
+      "shop": "Hornbach (online & Markt)",
+      "price": 39.95,
+      "type": "dauer",
+      "url": "https://www.hornbach.de/p/fensterblatt-floraself-monstera-deliciosa-variegata-h-ca-45-cm-o-15-cm-topf/12025889/",
+      "note": "Regulärer Preis, für eine weiß panaschierte Monstera dieser Größe günstig. Verfügbarkeit je Markt prüfen.",
+      "foundAt": "2026-11-15"
+    },
+    {
+      "id": "hornbach-deliciosa-20261115",
+      "title": "Monstera deliciosa (Bloomique), 50–70 cm, 17-cm-Topf",
+      "species": "deliciosa",
+      "shop": "Hornbach (online)",
+      "price": 13.99,
+      "type": "dauer",
+      "url": "https://www.hornbach.de/p/bloomique-monstera-deliciosa-fensterblatt-zimmerpflanzen-pflegeleicht-luftreinigend-hoehe-50-70-cm-topf-17-cm/12248156/",
+      "note": "Dauerpreis, für die Größe günstig. Versandkosten beachten.",
+      "foundAt": "2026-11-15"
     }
   ]
 }
