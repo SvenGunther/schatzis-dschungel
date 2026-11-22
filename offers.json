@@ -1,6 +1,58 @@
 {
-  "updatedAt": "2026-11-15",
+  "updatedAt": "2026-11-22",
   "offers": [
+    {
+      "id": "netto-thai-20261123",
+      "title": "Thai Monstera (Netto-Prospekt)",
+      "species": "thai",
+      "shop": "Netto (Filialen)",
+      "price": 7.99,
+      "type": "aktion",
+      "validFrom": "2026-11-23",
+      "validUntil": "2026-11-28",
+      "url": "https://www.prospektangebote.de/geschaefte/netto/angebote/thai-monstera-angebot-70939907/",
+      "note": "Prospektangebot, Größe nicht angegeben. Nur solange Vorrat reicht, früh hingehen.",
+      "foundAt": "2026-11-22"
+    },
+    {
+      "id": "foliagefactory-superwhite-20261122",
+      "title": "Monstera deliciosa variegata 'Super White'",
+      "species": "albo",
+      "shop": "Foliage Factory (Onlineshop)",
+      "price": 29.35,
+      "regular": 39,
+      "type": "aktion",
+      "validUntil": "2026-11-30",
+      "url": "https://foliage-factory.com/de/collections/black-friday",
+      "note": "Black Friday. Vergleichspreis = niedrigster Preis der letzten 30 Tage. Bestellung bis 30.11., danach Winterpause. Größe nicht angegeben, zzgl. Versand.",
+      "foundAt": "2026-11-22"
+    },
+    {
+      "id": "foliagefactory-thai-20261122",
+      "title": "Monstera 'Thai Constellation', kleine Jungpflanze",
+      "species": "thai",
+      "shop": "Foliage Factory (Onlineshop)",
+      "price": 8.6,
+      "regular": 10.75,
+      "type": "aktion",
+      "validUntil": "2026-11-30",
+      "url": "https://foliage-factory.com/de/collections/black-friday",
+      "note": "Black Friday, Ab-Preis für die kleinste Größe. Bestellung bis 30.11., danach Winterpause. Zzgl. Versand.",
+      "foundAt": "2026-11-22"
+    },
+    {
+      "id": "foliagefactory-mint-20261122",
+      "title": "Monstera deliciosa variegata 'Mint'",
+      "species": "andere",
+      "shop": "Foliage Factory (Onlineshop)",
+      "price": 18.45,
+      "regular": 23.5,
+      "type": "aktion",
+      "validUntil": "2026-11-30",
+      "url": "https://foliage-factory.com/de/collections/black-friday",
+      "note": "Black Friday, mintgrün panaschiert. Bestellung bis 30.11., danach Winterpause. Größe nicht angegeben, zzgl. Versand.",
+      "foundAt": "2026-11-22"
+    },
     {
       "id": "hornbach-thai-12",
       "title": "Monstera 'Thai Constellation', 12-cm-Topf, ca. 25 cm hoch",
